@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1028785376271",
+    "project_id": "bid-online-app",
+    "storage_bucket": "bid-online-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1028785376271:android:51c574ae8b9a31c257677a",
+        "android_client_info": {
+          "package_name": "com.example.bid_online_app_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1028785376271-1bodgebvtuor8qi7qh2i7fdggrgu2gfm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrnmmIa-3WTzA6IThNXxu_3kffrVTwIlg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1028785376271-1bodgebvtuor8qi7qh2i7fdggrgu2gfm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
