@@ -1,6 +1,7 @@
 import 'package:bid_online_app_v2/constants.dart';
 import 'package:bid_online_app_v2/helper.dart';
 import 'package:bid_online_app_v2/models/UserProfile.dart';
+import 'package:bid_online_app_v2/pages/history/components/session_detail.dart';
 import 'package:bid_online_app_v2/pages/personal_item/models/BookingItemWaitting.dart';
 import 'package:bid_online_app_v2/pages/personal_item/services/personal_item_service.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +51,16 @@ class _ItemWaittingState extends State<ItemWaitting> {
                 itemBuilder: (context, index) {
                   return Container(
                       child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            //       Navigator.of(context).push(
+                            //   MaterialPageRoute(
+                            //     builder: (context) => SessionDetailForPayment(
+                            //       session: sessions[i],
+                            //       checkPayment: true,
+                            //     ),
+                            //   ),
+                            // );
+                          },
                           child: Card(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,

@@ -54,9 +54,12 @@ class _CardProductState extends State<CardProduct> {
       isLoading = false;
     });
     setState(() {
-      validFee = widget.session.joinFee! * widget.session.firstPrice;
-      if (validFee! > 120000) {
-        validFee = 120000;
+      validFee = widget.session.participationFee * widget.session.firstPrice;
+      if (validFee! > 200000) {
+        validFee = 200000;
+      }
+      if (validFee! < 10000) {
+        validFee = 10000;
       }
     });
   }

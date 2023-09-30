@@ -84,10 +84,10 @@ class _SessionListState extends State<SessionList> {
       itemBuilder: (ctx, i) {
         loading = false;
         // widget.session.first.status = 2;
-        widget.session[i].joinFee = HomePage.listFees
-            ?.where((element) => element.feeId == widget.session[i].feeId)
-            .first
-            .participationFee;
+        // widget.session[i].joinFee = HomePage.listFees
+        //     ?.where((element) => element.feeId == widget.session[i].feeId)
+        //     .first
+        //     .participationFee;
         return CardProduct(
           session: widget.session[i],
         );

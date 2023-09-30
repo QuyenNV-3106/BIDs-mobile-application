@@ -6,7 +6,10 @@ import 'package:bid_online_app_v2/constants.dart';
 import 'package:bid_online_app_v2/helper.dart';
 import 'package:bid_online_app_v2/models/Session.dart';
 import 'package:bid_online_app_v2/models/SessionDetail.dart';
+import 'package:bid_online_app_v2/models/SessionHaveNotPay.dart';
 import 'package:bid_online_app_v2/models/UserProfile.dart';
+import 'package:bid_online_app_v2/pages/history/components/session_detail.dart';
+import 'package:bid_online_app_v2/pages/history/services/history_services.dart';
 import 'package:bid_online_app_v2/pages/home/home_page.dart';
 import 'package:bid_online_app_v2/pages/home/services/session_service.dart';
 import 'package:bid_online_app_v2/pages/login/components/alert_dialog.dart';
@@ -42,9 +45,14 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
   String paymentUrl = "";
   static int seconds = 0, minutes = 0;
   late DateTime result;
-  // Duration now = DateTime.now().difference(DateTime.parse(widget.session!.delayTime));
+  double? validFee;
+  String winner = "";
+  List<SessionHaveNotPay> sessionsNotpay = [];
 
   _loadingSession() async {
+    setState(() {
+      loading = true;
+    });
     await SessionService().getAllSessions().then((value) {
       setState(() {
         loading = false;
@@ -52,11 +60,6 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
             .where((element) => element.sessionId == widget.session!.sessionId)
             .toList()
             .first;
-        session!.joinFee = HomePage.listFees
-            ?.where((element) => element.feeId == widget.session!.feeId)
-            .first
-            .participationFee;
-        print(session!.finalPrice);
       });
       return value;
     }).timeout(
@@ -65,7 +68,6 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
         AlertDialogMessage alert = AlertDialogMessage();
         setState(() {
           loading = false;
-          // session ;
         });
         return alert.showAlertDialog(context, "Lỗi Kết Nối",
             "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
@@ -84,18 +86,14 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
       setState(() {
         loading = false;
       });
-      if (value.statusCode != 200) {
-        if (value.body == messageRegister) {
-          setState(() {
-            checkRegister = true;
-          });
-          return alert.showAlertDialog(context, "Thông báo", value.body);
-        } else {
-          checkRegister = false;
-        }
+      if (value.body == messageRegister) {
+        alert.showAlertDialog(context, "Thông báo", value.body);
+      } else if (value.body == messageInStage) {
+        setState(() {});
+        return _showRegisterNotStartDialog(context, value.body);
       }
     }).timeout(
-      const Duration(minutes: 1),
+      const Duration(seconds: 50),
       onTimeout: () {
         setState(() {
           loading = false;
@@ -122,12 +120,12 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
           setState(() {
             checkRegister = false;
           });
-          return alert.showAlertDialog(context, "Thông báo", value.body);
-        } else {
-          setState(() {
-            checkRegister = true;
-          });
+          return _showRegisterNotStartDialog(context, value.body);
         }
+      } else {
+        setState(() {
+          checkRegister = true;
+        });
       }
     }).timeout(
       const Duration(minutes: 1),
@@ -159,7 +157,6 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
 
       minutes = minute;
       seconds = second;
-      print(result);
     });
     _timerToBidder = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (minutes > 0) {
@@ -212,72 +209,137 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
   @override
   void initState() {
     setState(() {
+      validFee = widget.session!.participationFee * widget.session!.firstPrice;
+      if (validFee! > 200000) {
+        validFee = 200000;
+      }
+      if (validFee! < 10000) {
+        validFee = 10000;
+      }
+    });
+    setState(() {
       session = widget.session!;
     });
-    setState(() {
-      loading = true;
-    });
     _loadingSession();
-    setState(() {
-      loading = false;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       _refreshData();
     });
     if (widget.session!.status == 1) {}
     if (widget.session!.status == 2) {}
+    print('innn: ${session!.status}');
+
     super.initState();
   }
 
   _bidTheSession() async {
     AlertDialogMessage alert = AlertDialogMessage();
-    if (session!.status == 1) {
-      return alert.showAlertDialog(
-          context, "Thất bại", 'Chưa đến thời gian đấu giá');
-    } else {
-      await BidderService()
-          .increasePrice(widget.session!.sessionId, UserProfile.user!.userId!)
-          .then((value) {
-        if (value.statusCode != 200) {
-          return alert.showAlertDialog(context, "Có lỗi xảy ra", value.body);
-        } else {
-          _loadingSession();
-          return alert.showAlertDialog(context, "Thành công",
-              'Bạn vừa tăng giá là: ${Helper().formatCurrency(session!.stepPrice)} VNĐ');
-        }
-      }).timeout(
-        const Duration(minutes: 1),
-        onTimeout: () {
-          setState(() {
-            loading = false;
-            // session ;
-          });
-          return alert.showAlertDialog(context, "Lỗi Kết Nối",
-              "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-        },
-      );
-    }
+    await BidderService()
+        .increasePrice(widget.session!.sessionId, UserProfile.user!.userId!)
+        .then((value) {
+      if (value.statusCode != 200) {
+        return alert.showAlertDialog(context, "Có lỗi xảy ra", value.body);
+      } else {
+        setState(() {
+          running = true;
+        });
+        _handleTimeButton();
+        _loadingSession();
+        return alert.showAlertDialog(context, "Thành công",
+            'Giá bạn vừa tăng thêm là: ${Helper().formatCurrency(session!.stepPrice)} VNĐ');
+      }
+    }).timeout(
+      const Duration(minutes: 1),
+      onTimeout: () {
+        setState(() {
+          loading = false;
+          // session ;
+        });
+        return alert.showAlertDialog(context, "Lỗi Kết Nối",
+            "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+      },
+    );
   }
 
   _refreshData() async {
+    await SessionService().getAllSessionsNotStart();
+    await SessionService().getAllSessionsInStage();
     await SessionService().getAllSessions().then((value) {
       setState(() {
         session = value
             .where((element) => element.sessionId == widget.session!.sessionId)
             .toList()
             .first;
-        session!.joinFee = HomePage.listFees
-            ?.where((element) => element.feeId == widget.session!.feeId)
-            .first
-            .participationFee;
       });
       return value;
-    }).timeout(
-      const Duration(minutes: 4),
-      onTimeout: () {
-        AlertDialogMessage alert = AlertDialogMessage();
-        return alert.showAlertDialog(context, "Lỗi Kết Nối",
-            "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+    });
+    await PaymentService().paymentChecking(UserProfile.user!.userId!);
+  }
+
+  void _showRegisterNotStartDialog(BuildContext context, String detail) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Thông báo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                detail,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Đồng ý'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showPaymentRegisterDialog(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showInStageDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bạn có muốn tăng giá'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Bạn sẽ tăng thêm ${Helper().formatCurrency(widget.session!.stepPrice)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              )
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Hủy'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Đồng ý'),
+              onPressed: () {
+                setState(() {
+                  running = true;
+                });
+                Navigator.of(context).pop();
+                _bidTheSession();
+              },
+            ),
+          ],
+        );
       },
     );
   }
@@ -295,7 +357,7 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
       });
       return value;
     }).timeout(
-      const Duration(minutes: 1),
+      const Duration(seconds: 10),
       onTimeout: () {
         AlertDialogMessage alert = AlertDialogMessage();
         setState(() {
@@ -309,6 +371,182 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
     setState(() {
       loading = false;
     });
+  }
+
+  void _showPaymentRegisterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Chi tiết đơn hàng'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'Phí tham gia: ${Helper().formatCurrency(validFee!)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              Text(
+                'Phí đặt cọc: ${Helper().formatCurrency(widget.session!.depositFee * widget.session!.firstPrice)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              Text(
+                'Tổng số tiền phải trả: ${Helper().formatCurrency((widget.session!.depositFee * widget.session!.firstPrice) + validFee!)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Thoát'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Thanh toán bằng PayPal'),
+              onPressed: () async {
+                await _registerToSession();
+
+                await launchUrl(Uri.parse(paymentUrl),
+                    mode: LaunchMode.externalApplication);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget sessionInstageProcess() {
+    return DefaultButton(
+        text: 'Đấu giá ngay',
+        press: () async {
+          setState(() {
+            loading = true;
+          });
+          await _loadningJoinInStage();
+          setState(() {
+            loading = false;
+          });
+        });
+  }
+
+  Widget sessionNotStartProcess() {
+    return DefaultButton(
+        text: 'Đăng kí tham gia',
+        press: () async {
+          setState(() {
+            loading = true;
+          });
+          await _loadningJoinNotStart();
+          setState(() {
+            loading = false;
+          });
+        });
+  }
+
+  Widget biddingButton() {
+    return running
+        ? ElevatedButton(
+            style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll(Colors.blue)),
+            onPressed: () {},
+            child: Text('00:$minutes:$seconds'),
+          )
+        : ElevatedButton(
+            style: const ButtonStyle(
+                backgroundColor: MaterialStatePropertyAll(kPrimaryColor)),
+            onPressed: () async {
+              setState(() {
+                // running = true;
+              });
+              setState(() {
+                loading = true;
+              });
+              // await _bidTheSession();
+              _showInStageDialog(context);
+              setState(() {
+                loading = false;
+              });
+            },
+            child: const Text('Tăng giá'),
+          );
+  }
+
+  Widget sessionEnding() {
+    return DefaultButton(
+        text: 'Kết quả trúng thầu',
+        press: () async {
+          setState(() {
+            loading = true;
+          });
+          await HistoryService()
+              .getAllSessionsHaveNotPay(UserProfile.user!.userId!)
+              .then((value) {
+            sessionsNotpay = value
+                .where((element) =>
+                    element.sessionResponseCompletes.sessionId ==
+                    session!.sessionId)
+                .toList();
+            winner = sessionsNotpay.first.winner;
+          });
+          setState(() {
+            loading = false;
+            Navigator.of(context).pop();
+            _showEndSessionDialog(context);
+          });
+        });
+  }
+
+  void _showEndSessionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Thông báo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                (winner == UserProfile.user!.email)
+                    ? "Chúc mừng bạn đã trúng thầu với tổng số tiền là: ${Helper().formatCurrency(session!.finalPrice)} VNĐ"
+                    : "Chúc mừng $winner đã trúng thầu với tổng số tiền là: ${Helper().formatCurrency(session!.finalPrice)} VNĐ",
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ],
+          ),
+          actions: (winner == UserProfile.user!.email)
+              ? <Widget>[
+                  TextButton(
+                    child: const Text('Thanh toán ngay'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => SessionDetailForPayment(
+                            session: sessionsNotpay.first,
+                            checkPayment: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ]
+              : <Widget>[
+                  TextButton(
+                    child: const Text('Đồng ý'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+        );
+      },
+    );
   }
 
   @override
@@ -364,91 +602,14 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
                                       (40 / 375.0) * sizeInit(context).width,
                                   top: (15 / 375.0) * sizeInit(context).width,
                                 ),
-                                child: session!.status == 1
-                                    ? DefaultButton(
-                                        text: "Đăng ký tham gia",
-                                        press: () async {
-                                          setState(() {
-                                            loading = true;
-                                          });
-                                          await _loadningJoinNotStart();
-                                          if (!checkRegister) {
-                                            await _registerToSession();
-                                            setState(() {
-                                              loading = false;
-                                            });
-                                            await launchUrl(
-                                                    Uri.parse(paymentUrl),
-                                                    mode:
-                                                        LaunchMode.inAppWebView)
-                                                .whenComplete(() =>
-                                                    Navigator.pop(context));
-                                          }
-                                        },
-                                      )
-                                    : checkEnableButton
-                                        ? running
-                                            ? ElevatedButton(
-                                                style: const ButtonStyle(
-                                                    backgroundColor:
-                                                        MaterialStatePropertyAll(
-                                                            Colors.blue)),
-                                                onPressed: () {},
-                                                child: Text(
-                                                    '00:$minutes:$seconds'),
-                                              )
-                                            : ElevatedButton(
-                                                style: const ButtonStyle(
-                                                    backgroundColor:
-                                                        MaterialStatePropertyAll(
-                                                            kPrimaryColor)),
-                                                onPressed: () async {
-                                                  setState(() {
-                                                    running = true;
-                                                  });
-                                                  _handleTimeButton();
-                                                  setState(() {
-                                                    loading = true;
-                                                  });
-                                                  await _bidTheSession();
-                                                  setState(() {
-                                                    loading = false;
-                                                  });
-                                                },
-                                                child: const Text('Tăng giá'),
-                                              )
-                                        : ElevatedButton(
-                                            style: const ButtonStyle(
-                                                backgroundColor:
-                                                    MaterialStatePropertyAll(
-                                                        kPrimaryColor)),
-                                            onPressed: () async {
-                                              setState(() {
-                                                loading = true;
-                                              });
-                                              await _loadningJoinInStage();
-                                              setState(() {
-                                                loading = false;
-                                              });
-                                              if (checkRegister) {
-                                                setState(() {
-                                                  checkEnableButton = true;
-                                                });
-                                              } else {
-                                                await _registerToSession();
-                                                await launchUrl(
-                                                        Uri.parse(paymentUrl),
-                                                        mode: LaunchMode
-                                                            .inAppWebView)
-                                                    .whenComplete(() =>
-                                                        Navigator.pop(context));
-                                                setState(() {
-                                                  checkEnableButton = true;
-                                                });
-                                              }
-                                            },
-                                            child: const Text('Đấu giá'),
-                                          ),
+                                child: (session!.status != 1 &&
+                                        session!.status != 2)
+                                    ? sessionEnding()
+                                    : (!checkRegister
+                                        ? (session!.status == 2
+                                            ? sessionInstageProcess()
+                                            : sessionNotStartProcess())
+                                        : biddingButton()),
                               ),
                             ),
                           ],

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bid_online_app_v2/constants.dart';
 import 'package:bid_online_app_v2/models/TokenManager.dart';
 import 'package:http/http.dart' as http;
@@ -33,6 +35,20 @@ class PaymentService {
     return resp;
   }
 
+  Future<http.Response> rejectPayment(String sessionId) async {
+    final uri = Uri.parse("$apiUrl$apiRejectPayment");
+    final resp = await http.put(
+      uri,
+      headers: <String, String>{
+        "content-type": "application/json; charset=utf-8",
+        'Authorization': 'Bearer ${TokenManager.getToken()}'
+      },
+      body: jsonEncode({"sessionID": sessionId}),
+    );
+
+    return resp;
+  }
+
   Future<http.Response> paymentChecking(
     String payerId,
   ) async {
@@ -45,8 +61,6 @@ class PaymentService {
         'Authorization': 'Bearer ${TokenManager.getToken()}'
       },
     );
-    print("status: ${resp.statusCode}");
-    print("status: ${resp.body}");
 
     return resp;
   }

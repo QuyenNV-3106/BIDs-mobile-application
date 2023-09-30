@@ -24,7 +24,8 @@ class BidderService {
           'Authorization': 'Bearer ${TokenManager.getToken()}'
         },
         body: jsonEncode({"userId": userID, "sessionId": sessionId}));
-
+    print("status: ${resp.statusCode}");
+    print("status: ${resp.body}");
     return resp;
   }
 

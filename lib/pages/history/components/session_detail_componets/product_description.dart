@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_countdown_timer/current_remaining_time.dart';
 import 'package:flutter_countdown_timer/flutter_countdown_timer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:readmore/readmore.dart';
 
 class ProductDescription extends StatefulWidget {
@@ -36,6 +37,7 @@ class _ProductDescriptionState extends State<ProductDescription> {
   late DateTime _remainingDateTime = Helper().calculateRemainDayTime(
       widget.session!.sessionResponseCompletes!.beginTime!,
       widget.session!.sessionResponseCompletes!.endTime!);
+  late double validFee;
 
   void _startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -85,6 +87,16 @@ class _ProductDescriptionState extends State<ProductDescription> {
   void initState() {
     _startCountdown();
     fetchSessionDetail();
+    setState(() {
+      validFee = widget.session!.sessionResponseCompletes.participationFee *
+          widget.session!.sessionResponseCompletes.firstPrice;
+      if (validFee! > 200000) {
+        validFee = 200000;
+      }
+      if (validFee! < 10000) {
+        validFee = 10000;
+      }
+    });
     super.initState();
   }
 
@@ -98,7 +110,7 @@ class _ProductDescriptionState extends State<ProductDescription> {
     try {
       await SessionDetailService()
           .getSessionDetailHistory(
-              widget.session!.sessionResponseCompletes!.sessionId!)
+              widget.session!.sessionResponseCompletes.sessionId)
           .then((value) {
         setState(() {
           sessionDetail = value;
@@ -157,9 +169,26 @@ class _ProductDescriptionState extends State<ProductDescription> {
                   textAlign: TextAlign.center,
                 ),
               ),
+              Row(
+                children: [
+                  Text(
+                    '${widget.session!.winner} ',
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                  Text(
+                    'đã thắng',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ],
+              ),
               const SizedBox(height: 15),
               Text(
                 'Giá khởi điểm: ${Helper().formatCurrency(widget.session!.sessionResponseCompletes!.finalPrice!)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Bước giá: ${Helper().formatCurrency(widget.session!.sessionResponseCompletes.stepPrice)} VNĐ',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 15),
@@ -169,16 +198,53 @@ class _ProductDescriptionState extends State<ProductDescription> {
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 15),
+              Text(
+                'Phí tham gia: ${Helper().formatCurrency(validFee!)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Phí đặt cọc: ${Helper().formatCurrency(widget.session!.sessionResponseCompletes.depositFee * widget.session!.sessionResponseCompletes.firstPrice)} VNĐ',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Thời gian bắt đầu: ${DateFormat('dd/MM/yyyy HH:mm:ss').format(widget.session!.sessionResponseCompletes.beginTime)}',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Thời gian trì hoãn tăng giá: ${widget.session!.sessionResponseCompletes.delayTime}',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Thay đổi thời gian trì hoãn tăng giá: ${widget.session!.sessionResponseCompletes.freeTime} (cuối)',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
+              Text(
+                'Thời gian trì hoãn tăng giá đã thay đổi: ${widget.session!.sessionResponseCompletes.delayFreeTime}',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 15),
               Row(
                 children: [
                   Text(
                     'Trạng thái: ',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  const Text(
-                    'Đã kết thúc',
+                  Text(
+                    widget.session!.sessionResponseCompletes!.status != 1
+                        ? 'Đã kết thúc'
+                        : 'Đang diễn ra',
                     style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.w400),
+                        color:
+                            widget.session!.sessionResponseCompletes!.status !=
+                                    1
+                                ? Colors.red
+                                : Colors.green,
+                        fontWeight: FontWeight.w400),
                   )
                 ],
               ),
@@ -199,7 +265,7 @@ class _ProductDescriptionState extends State<ProductDescription> {
               Row(
                 children: [
                   Text(
-                    'Tổng giá tiền: ',
+                    'Giá cuối cùng: ',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
@@ -242,9 +308,13 @@ class _ProductDescriptionState extends State<ProductDescription> {
                               isHistoryLoad = false;
                             });
                             setState(() {
-                              Navigator.pushNamed(
-                                  context, HistoryBidder.routeName,
-                                  arguments: sessionDetail);
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) => HistoryBidder(
+                                      sessionID: widget.session!
+                                          .sessionResponseCompletes.sessionId),
+                                ),
+                              );
                             });
                           },
                         ),

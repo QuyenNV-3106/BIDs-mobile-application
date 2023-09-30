@@ -24,19 +24,20 @@ class _ProductImagesState extends State<ProductImages> {
             child: Hero(
               tag:
                   widget.session.sessionResponseCompletes!.sessionId.toString(),
-              child: widget.session.sessionResponseCompletes!.images!.isEmpty
-                  ? Image.asset(noImage)
-                  : Image.network(
-                      widget.session.sessionResponseCompletes!
-                          .images![selectedImage].detail!,
-                      fit: BoxFit.fitWidth,
-                      loadingBuilder: (context, child, loadingProgress) =>
-                          loadingProgress == null
-                              ? child
-                              : Image.asset(noImage),
-                      errorBuilder: (context, error, stackTrace) =>
-                          Image.asset(noImage),
-                    ),
+              child:
+                  widget.session.sessionResponseCompletes!.ImageItems!.isEmpty
+                      ? Image.asset(noImage)
+                      : Image.network(
+                          widget.session.sessionResponseCompletes!
+                              .ImageItems![selectedImage].detail!,
+                          fit: BoxFit.fitWidth,
+                          loadingBuilder: (context, child, loadingProgress) =>
+                              loadingProgress == null
+                                  ? child
+                                  : Image.asset(noImage),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(noImage),
+                        ),
             ),
           ),
         ),
@@ -47,7 +48,7 @@ class _ProductImagesState extends State<ProductImages> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ...List.generate(
-                  widget.session.sessionResponseCompletes!.images!.length,
+                  widget.session.sessionResponseCompletes.ImageItems.length,
                   (index) => buildSmallProductPreview(index)),
             ],
           ),
@@ -77,7 +78,7 @@ class _ProductImagesState extends State<ProductImages> {
               color: kPrimaryColor.withOpacity(selectedImage == index ? 1 : 0)),
         ),
         child: Image.network(
-          widget.session.sessionResponseCompletes!.images![index].detail!,
+          widget.session.sessionResponseCompletes.ImageItems[index].detail,
           loadingBuilder: (context, child, loadingProgress) =>
               loadingProgress == null ? child : Image.asset(noImage),
           errorBuilder: (context, error, stackTrace) => Image.asset(noImage),

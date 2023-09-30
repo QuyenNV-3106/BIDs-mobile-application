@@ -332,6 +332,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 .toString()),
           ),
           ListTile(
+            leading: const Icon(Icons.paypal_outlined),
+            title: userState!.payPalAccount!.firstOrNull == null
+                ? const Text('Không có tài khoản PayPal')
+                : const Text('Không có tài khoản PayPal'),
+          ),
+          ListTile(
             leading: const Icon(Icons.business_center),
             title: Text(userState!.role! == 'Bidder'
                 ? 'Bạn có thể tham gia đấu giá'

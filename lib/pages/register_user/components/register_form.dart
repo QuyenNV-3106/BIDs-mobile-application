@@ -217,111 +217,103 @@ class _RegisteAccountrFormState extends State<RegisterAccountForm> {
               : SizedBox(height: (40 / 812.0) * sizeInit(context).height),
           !isVerify
               ? const SizedBox(height: 0)
-              : loading
-                  ? spinkit
-                  : DefaultButton(
-                      text: "Đăng Ký",
-                      press: () async {
-                        if (RegisterAccountForm.avatarImage == null ||
-                            RegisterAccountForm.frontImage == null ||
-                            RegisterAccountForm.backImage == null) {
-                          alert.showAlertDialog(context, "Thất bại",
-                              "Bạn chưa cung cấp đủ hình ảnh\nMời bạn kiểm tra và bổ sung");
-                        } else if (_formkey.currentState!.validate()) {
-                          _formkey.currentState!.save();
-                          // Navigator.pushNamed(context, CompleteProfileScreen.routeName);
+              : DefaultButton(
+                  text: "Đăng Ký",
+                  press: () async {
+                    if (RegisterAccountForm.avatarImage == null ||
+                        RegisterAccountForm.frontImage == null ||
+                        RegisterAccountForm.backImage == null) {
+                      alert.showAlertDialog(context, "Thất bại",
+                          "Bạn chưa cung cấp đủ hình ảnh\nMời bạn kiểm tra và bổ sung");
+                    } else if (_formkey.currentState!.validate()) {
+                      _formkey.currentState!.save();
+                      // Navigator.pushNamed(context, CompleteProfileScreen.routeName);
 
+                      setState(() {
+                        loading = true;
+                      });
+                      await FirebaseService()
+                          .uploadImageToFirebase(
+                              RegisterAccountForm.frontImage!,
+                              InputEmail.emailEditingController.text,
+                              "front")
+                          .then((value) =>
+                              RegisterAccountForm.frontImageLink = value)
+                          .timeout(
+                        const Duration(minutes: 3),
+                        onTimeout: () {
+                          return alert.showAlertDialog(context, "Thất bại",
+                              "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+                        },
+                      );
+                      await FirebaseService()
+                          .uploadImageToFirebase(RegisterAccountForm.backImage!,
+                              InputEmail.emailEditingController.text, "back")
+                          .then((value) =>
+                              RegisterAccountForm.backImageLink = value)
+                          .timeout(
+                        const Duration(minutes: 1),
+                        onTimeout: () {
+                          return alert.showAlertDialog(context, "Thất bại",
+                              "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+                        },
+                      );
+                      await FirebaseService()
+                          .uploadImageToFirebase(
+                              RegisterAccountForm.avatarImage!,
+                              InputEmail.emailEditingController.text,
+                              "avatar")
+                          .then((value) =>
+                              RegisterAccountForm.avatarImageLink = value)
+                          .timeout(
+                        const Duration(minutes: 1),
+                        onTimeout: () {
+                          return alert.showAlertDialog(context, "Thất bại",
+                              "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+                        },
+                      );
+                      UserSignUp user = UserSignUp(
+                          userName: InputName.nameEditingController.text,
+                          email: InputEmail.emailEditingController.text,
+                          avatar: RegisterAccountForm.avatarImageLink!,
+                          password:
+                              InputPassword.passwordEditingController.text,
+                          address: InputAddress.addressEditingController.text,
+                          phone: InputPhoneNumber.phoneEditingController.text,
+                          dateOfBirth: DateFormat("dd-mm-yyyy")
+                              .parse(InputDob.dateController.text),
+                          cccdnumber: InputCccd.cccdEditingController.text,
+                          cccdfrontImage: RegisterAccountForm.frontImageLink!,
+                          cccdbackImage: RegisterAccountForm.backImageLink!);
+                      await UserService().signUpAccount(user).then((value) {
+                        if (value.statusCode == 200) {
                           setState(() {
-                            loading = true;
+                            isSuccess = true;
+                            alert.showAlertDialogWithReplaceRoute(
+                                context,
+                                "Thành Công",
+                                "Bạn đã đăng ký thành công tài khoản\nChúng tôi sẽ duyệt và phản hồi lại vào email mà bạn đã đăng ký trong 48h",
+                                LoginPage.routeName);
                           });
-                          await FirebaseService()
-                              .uploadImageToFirebase(
-                                  RegisterAccountForm.frontImage!,
-                                  InputEmail.emailEditingController.text,
-                                  "front")
-                              .then((value) =>
-                                  RegisterAccountForm.frontImageLink = value)
-                              .timeout(
-                            const Duration(minutes: 3),
-                            onTimeout: () {
-                              return alert.showAlertDialog(context, "Thất bại",
-                                  "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-                            },
-                          );
-                          await FirebaseService()
-                              .uploadImageToFirebase(
-                                  RegisterAccountForm.backImage!,
-                                  InputEmail.emailEditingController.text,
-                                  "back")
-                              .then((value) =>
-                                  RegisterAccountForm.backImageLink = value)
-                              .timeout(
-                            const Duration(minutes: 1),
-                            onTimeout: () {
-                              return alert.showAlertDialog(context, "Thất bại",
-                                  "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-                            },
-                          );
-                          await FirebaseService()
-                              .uploadImageToFirebase(
-                                  RegisterAccountForm.avatarImage!,
-                                  InputEmail.emailEditingController.text,
-                                  "avatar")
-                              .then((value) =>
-                                  RegisterAccountForm.avatarImageLink = value)
-                              .timeout(
-                            const Duration(minutes: 1),
-                            onTimeout: () {
-                              return alert.showAlertDialog(context, "Thất bại",
-                                  "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-                            },
-                          );
-                          UserSignUp user = UserSignUp(
-                              userName: InputName.nameEditingController.text,
-                              email: InputEmail.emailEditingController.text,
-                              avatar: RegisterAccountForm.avatarImageLink!,
-                              password:
-                                  InputPassword.passwordEditingController.text,
-                              address:
-                                  InputAddress.addressEditingController.text,
-                              phone:
-                                  InputPhoneNumber.phoneEditingController.text,
-                              dateOfBirth: DateFormat("dd-mm-yyyy")
-                                  .parse(InputDob.dateController.text),
-                              cccdnumber: InputCccd.cccdEditingController.text,
-                              cccdfrontImage:
-                                  RegisterAccountForm.frontImageLink!,
-                              cccdbackImage:
-                                  RegisterAccountForm.backImageLink!);
-                          await UserService().signUpAccount(user).then((value) {
-                            if (value.statusCode == 200) {
-                              setState(() {
-                                isSuccess = true;
-                                alert.showAlertDialogWithReplaceRoute(
-                                    context,
-                                    "Thành Công",
-                                    "Bạn đã đăng ký thành công tài khoản\nChúng tôi sẽ duyệt và phản hồi lại vào email mà bạn đã đăng ký trong 48h",
-                                    LoginPage.routeName);
-                              });
-                            } else {
-                              FirebaseService().deleteFile(
-                                  InputEmail.emailEditingController.text);
-                              alert.showAlertDialog(
-                                  context, "Đăng Ký thất bại", value.body);
-                            }
-                          }).timeout(
-                            const Duration(seconds: 30),
-                            onTimeout: () {
-                              return alert.showAlertDialog(context, "Thất bại",
-                                  "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-                            },
-                          );
-                          setState(() {
-                            loading = false;
-                          });
+                        } else {
+                          FirebaseService().deleteFile(
+                              InputEmail.emailEditingController.text);
+                          alert.showAlertDialog(
+                              context, "Đăng Ký thất bại", value.body);
                         }
-                      },
-                    ),
+                      }).timeout(
+                        const Duration(seconds: 30),
+                        onTimeout: () {
+                          return alert.showAlertDialog(context, "Thất bại",
+                              "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+                        },
+                      );
+                      setState(() {
+                        loading = false;
+                      });
+                    }
+                  },
+                ),
         ],
       ),
     );

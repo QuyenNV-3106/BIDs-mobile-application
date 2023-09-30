@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       });
       return value;
     }).timeout(
-      const Duration(minutes: 1),
+      const Duration(minutes: 3),
       onTimeout: () {
         setState(() {
           _loading = false;
@@ -71,7 +71,8 @@ class _HomePageState extends State<HomePage> {
     await CategoryService().getAllCategories().then((value) {
       setState(() {
         // _loading = false;
-        listCategory = value;
+        listCategory =
+            value.where((element) => element.status == true).toList();
         listCategory!.insert(
             0,
             CategoryProduct(
@@ -89,23 +90,6 @@ class _HomePageState extends State<HomePage> {
             "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
       },
     );
-    await FeeService().getFee().then((value) {
-      setState(() {
-        // _loading = false;
-        HomePage.listFees = value;
-      });
-      return value;
-    }).timeout(
-      const Duration(minutes: 3),
-      onTimeout: () {
-        setState(() {
-          _loading = false;
-          _loadingSmall = false;
-        });
-        return alert.showAlertDialog(context, "Lỗi Kết Nối",
-            "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
-      },
-    );
     await SessionService().getAllSessionsNotStart().then((value) {
       setState(() {
         _loading = false;
@@ -114,7 +98,7 @@ class _HomePageState extends State<HomePage> {
       });
       return value;
     }).timeout(
-      const Duration(minutes: 4),
+      const Duration(minutes: 1),
       onTimeout: () {
         setState(() {
           _loading = false;
@@ -133,7 +117,7 @@ class _HomePageState extends State<HomePage> {
       });
       return value;
     }).timeout(
-      const Duration(minutes: 4),
+      const Duration(minutes: 1),
       onTimeout: () {
         setState(() {
           _loading = false;
@@ -147,10 +131,6 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _loading = false;
       listSessions = listAllSessions;
-      // listCategory!.insert(
-      //     0,
-      //     CategoryProduct(
-      //         categoryId: "1", categoryName: "Tất cả", status: true));
     });
     return;
   }
@@ -187,7 +167,28 @@ class _HomePageState extends State<HomePage> {
       listSessions = [];
       listAllSessions = [];
     });
-
+    await CategoryService().getAllCategories().then((value) {
+      setState(() {
+        // _loading = false;
+        listCategory =
+            value.where((element) => element.status == true).toList();
+        listCategory!.insert(
+            0,
+            CategoryProduct(
+                categoryId: "1", categoryName: "Tất cả", status: true));
+      });
+      return value;
+    }).timeout(
+      const Duration(minutes: 2),
+      onTimeout: () {
+        setState(() {
+          _loading = false;
+          _loadingSmall = false;
+        });
+        return alert.showAlertDialog(context, "Lỗi Kết Nối",
+            "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+      },
+    );
     await SessionService().getAllSessionsNotStart().then((value) {
       setState(() {
         _loading = false;

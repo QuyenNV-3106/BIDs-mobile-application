@@ -80,13 +80,17 @@ class _ProductDescriptionState extends State<ProductDescription> {
 
   @override
   void initState() {
+    print((widget.session!.status == 1 && !isExpire));
     _startCountdown();
     fetchSessionDetail();
     super.initState();
     setState(() {
-      validFee = widget.session!.joinFee! * widget.session!.firstPrice;
-      if (validFee! > 120000) {
-        validFee = 120000;
+      validFee = widget.session!.participationFee * widget.session!.firstPrice;
+      if (validFee! > 200000) {
+        validFee = 200000;
+      }
+      if (validFee! < 10000) {
+        validFee = 10000;
       }
     });
   }
@@ -160,7 +164,7 @@ class _ProductDescriptionState extends State<ProductDescription> {
               ),
               const SizedBox(height: 15),
               Text(
-                'Giá khởi điểm: ${Helper().formatCurrency(widget.session!.finalPrice)} VNĐ',
+                'Giá khởi điểm: ${Helper().formatCurrency(widget.session!.firstPrice)} VNĐ',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 15),
@@ -211,16 +215,24 @@ class _ProductDescriptionState extends State<ProductDescription> {
                     'Trạng thái: ',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  widget.session!.status == 1
+                  (widget.session!.status == 1 && widget.session!.status != 3)
                       ? const Text(
                           'Sắp bắt đầu',
                           style: TextStyle(
                               color: Colors.green, fontWeight: FontWeight.w400),
                         )
                       : const SizedBox(height: 0),
-                  widget.session!.status == 2
+                  (widget.session!.status == 2 && widget.session!.status != 3)
                       ? const Text(
                           'Đang diễn ra',
+                          style: TextStyle(
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.w400),
+                        )
+                      : const SizedBox(height: 0),
+                  (widget.session!.status != 1 && widget.session!.status != 2)
+                      ? const Text(
+                          'Đã kết thúc',
                           style: TextStyle(
                               color: kPrimaryColor,
                               fontWeight: FontWeight.w400),

@@ -11,7 +11,8 @@ class MainStateScreen extends StatefulWidget {
   static String routeName = "/main";
   static bool homeLoading = false;
   final int? indexPage;
-  const MainStateScreen({super.key, this.indexPage});
+  final bool? firstIn;
+  const MainStateScreen({super.key, this.indexPage, this.firstIn});
 
   @override
   State<MainStateScreen> createState() => _MainStateScreenState();
@@ -21,6 +22,7 @@ class _MainStateScreenState extends State<MainStateScreen> {
   int _currentIndex = 0;
   bool reloadHome = false;
   ScrollController homeController = ScrollController();
+  PageController _pageController = PageController();
   late bool _connectionStatus = false;
 
   void _checkInternetConnection() async {
@@ -48,6 +50,11 @@ class _MainStateScreenState extends State<MainStateScreen> {
     super.initState();
     if (widget.indexPage != null) {
       setState(() {
+        // if (widget.firstIn == null) {
+        //   reloadHome = false;
+        // } else {
+        //   reloadHome = widget.firstIn!;
+        // }
         _currentIndex = widget.indexPage!;
       });
     }
@@ -64,7 +71,7 @@ class _MainStateScreenState extends State<MainStateScreen> {
   final List<Widget> _screens = [
     const HomePage(),
     // const LoginPage(),
-    const CreateItemPage(),
+    const CreateItemPage(registerItem: true),
     const SettingPage(),
   ];
 
@@ -92,6 +99,18 @@ class _MainStateScreenState extends State<MainStateScreen> {
     }
   }
 
+  Widget _screen() {
+    return PageView(
+      controller: _pageController,
+      children: _screens,
+      onPageChanged: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
@@ -100,45 +119,37 @@ class _MainStateScreenState extends State<MainStateScreen> {
       });
     });
     return Scaffold(
-      body: !_connectionStatus
-          ? const Center(
-              child: alertConnecrion(),
-            )
-          : _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-            _onItemTapped(index);
-          });
-        },
-        selectedLabelStyle: const TextStyle(color: kPrimaryColor),
-        selectedItemColor: kPrimaryColor,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trang chủ',
-          ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.notifications),
-          //   label: 'Thông báo',
-          // ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_box),
-            label: 'Thêm sản phẩm',
-          ),
-          // BottomNavigationBarItem(
-          //   icon: Icon(Icons.history),
-          //   label: 'Lịch sử',
-          // ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Cài đặt',
-          ),
-        ],
-      ),
-    );
+        body: !_connectionStatus
+            ? const Center(
+                child: alertConnecrion(),
+              )
+            : _screens[_currentIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+              // _pageController.jumpToPage(index);
+              _onItemTapped(index);
+            });
+          },
+          selectedLabelStyle: const TextStyle(color: kPrimaryColor),
+          selectedItemColor: kPrimaryColor,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Trang chủ',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add_box),
+              label: 'Thêm tài sản',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Cài đặt',
+            ),
+          ],
+        ));
   }
 }

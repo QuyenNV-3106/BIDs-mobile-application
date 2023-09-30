@@ -53,4 +53,20 @@ class SessionService {
       return responseData.map((e) => Session.fromJson(e)).toList();
     }
   }
+
+  Future<List<Session>> getWinner(String sessionId) async {
+    final uri = Uri.parse(apiUrl + apiGetSessionDetailWinner + sessionId);
+    final resp = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer ${TokenManager.getToken()}'},
+    );
+
+    if (resp.statusCode == 200) {
+      final List<dynamic> responseData = jsonDecode(resp.body);
+      return responseData.map((e) => Session.fromJson(e)).toList();
+    } else {
+      final List<dynamic> responseData = jsonDecode(resp.body);
+      return responseData.map((e) => Session.fromJson(e)).toList();
+    }
+  }
 }

@@ -7,6 +7,7 @@ import 'dart:convert';
 class SessionDetailService {
   Future<List<SessionDetail>?> getSessionDetailHistory(String id) async {
     final uri = Uri.parse('$apiUrl$apiGetSessionDetail?id=$id');
+    print('id: $id');
     final resp = await http.get(
       uri,
       headers: {'Authorization': 'bearer ${TokenManager.getToken()}'},

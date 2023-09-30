@@ -21,6 +21,7 @@ class UserProfile {
   DateTime? createDate;
   DateTime? updateDate;
   String? status;
+  List<PayPalAccount>? payPalAccount;
   static String? emailSt;
   static String? avatarSt;
   static String? backCCCDSt;
@@ -29,6 +30,7 @@ class UserProfile {
   static UserProfile? user;
 
   UserProfile({
+    this.payPalAccount,
     this.userId,
     this.userName,
     this.email,
@@ -48,6 +50,10 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         userId: json["userId"],
+        payPalAccount: json["payPalAccount"] == null
+            ? []
+            : List<PayPalAccount>.from(
+                json["payPalAccount"]!.map((x) => PayPalAccount.fromJson(x))),
         userName: json["userName"],
         email: json["email"],
         role: json["role"],
@@ -72,6 +78,9 @@ class UserProfile {
 
   Map<String, dynamic> toJson() => {
         "userId": userId,
+        "payPalAccount": payPalAccount == null
+            ? []
+            : List<dynamic>.from(payPalAccount!.map((x) => x.toJson())),
         "userName": userName,
         "email": email,
         "role": role,
@@ -86,5 +95,21 @@ class UserProfile {
         "createDate": createDate?.toIso8601String(),
         "updateDate": updateDate?.toIso8601String(),
         "status": status,
+      };
+}
+
+class PayPalAccount {
+  String? payPalAccount;
+
+  PayPalAccount({
+    this.payPalAccount,
+  });
+
+  factory PayPalAccount.fromJson(Map<String, dynamic> json) => PayPalAccount(
+        payPalAccount: json["payPalAccount"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "payPalAccount": payPalAccount,
       };
 }

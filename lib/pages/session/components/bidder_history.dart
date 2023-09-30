@@ -12,7 +12,8 @@ import 'package:flutter/material.dart';
 class HistoryBidder extends StatefulWidget {
   static String routeName = "/bid_history";
   final Session? session;
-  const HistoryBidder({super.key, this.session});
+  final String? sessionID;
+  const HistoryBidder({super.key, this.session, this.sessionID});
 
   @override
   State<HistoryBidder> createState() => _HistoryBidderState();
@@ -20,6 +21,7 @@ class HistoryBidder extends StatefulWidget {
 
 class _HistoryBidderState extends State<HistoryBidder> {
   late Timer _timer;
+  String sessionID = "";
   List<SessionDetail> _sessionDetail = [];
   bool isHistoryLoad = false;
 
@@ -38,7 +40,7 @@ class _HistoryBidderState extends State<HistoryBidder> {
       });
     } catch (e) {
       setState(() {
-        isHistoryLoad = false;
+        // isHistoryLoad = false;
       });
     }
   }
@@ -52,7 +54,7 @@ class _HistoryBidderState extends State<HistoryBidder> {
 
   _refreshData() async {
     await SessionDetailService()
-        .getSessionDetailHistory(widget.session!.sessionId)
+        .getSessionDetailHistory(sessionID)
         .then((value) {
       setState(() {
         _sessionDetail = value!;
@@ -60,13 +62,29 @@ class _HistoryBidderState extends State<HistoryBidder> {
     });
   }
 
+  _loading() async {
+    setState(() {
+      isHistoryLoad = true;
+    });
+    await Future.delayed(const Duration(seconds: 8));
+    setState(() {
+      isHistoryLoad = false;
+    });
+  }
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    if (widget.session == null) {
+      sessionID = widget.sessionID!;
+    } else {
+      sessionID = widget.session!.sessionId;
+    }
     _timer = Timer.periodic(const Duration(seconds: 10), (Timer timer) {
       _refreshData();
     });
+    _loading();
     fetchSessionDetail();
   }
 

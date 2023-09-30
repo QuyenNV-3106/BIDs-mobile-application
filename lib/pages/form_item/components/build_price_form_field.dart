@@ -48,19 +48,19 @@ class _InputNameState extends State<InputPriceItem> {
           });
           return priceNullError;
         }
-        if (int.parse(value) < 1000000) {
-          setState(() {
-            !errors.contains(priceError)
-                ? errors.add(priceError)
-                : errors.remove(priceError);
-          });
-          return priceError;
-        }
+        // if (int.parse(value) < 1000000) {
+        //   setState(() {
+        //     !errors.contains(priceError)
+        //         ? errors.add(priceError)
+        //         : errors.remove(priceError);
+        //   });
+        //   return priceError;
+        // }
         return null;
       },
       decoration: const InputDecoration(
-          labelText: "Giá ban đầu",
-          hintText: "Nhập Giá ban đầu",
+          labelText: "Giá khởi điểm",
+          hintText: "Nhập khởi điểm",
           floatingLabelBehavior: FloatingLabelBehavior.always,
           suffixIcon: Icon(Icons.price_change_outlined)),
     );

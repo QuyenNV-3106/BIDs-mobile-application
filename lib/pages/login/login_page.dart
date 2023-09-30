@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class LoginPage extends StatefulWidget {
@@ -53,6 +54,22 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _connectionStatus = _getStatusString(connectivityResult);
     });
+  }
+
+  late SharedPreferences pref;
+
+  void _loadSavedCredentials() async {
+    pref = await SharedPreferences.getInstance();
+    setState(() {
+      remember = pref.getBool("account") ?? false;
+    });
+  }
+
+  void _saveCredentials(bool value) async {
+    setState(() {
+      remember = value;
+    });
+    pref.setBool('account', value);
   }
 
   bool _getStatusString(ConnectivityResult result) {
@@ -197,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
         }
         return value;
       }).timeout(
-        const Duration(minutes: 1),
+        const Duration(seconds: 40),
         onTimeout: () {
           setState(() {
             LoginPage.isLogin = false;

@@ -60,7 +60,7 @@ class _InputDobState extends State<InputDob> {
       },
       decoration: InputDecoration(
           labelText: "Ngày sinh",
-          hintText: "yyyy-mm-dd",
+          hintText: "dd-mm-yyyy",
           floatingLabelBehavior: FloatingLabelBehavior.always,
           suffixIcon: IconButton(
               onPressed: () {

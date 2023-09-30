@@ -121,14 +121,6 @@ class _SettingPageState extends State<SettingPage> {
                     },
                   ),
                   ProfileMenu(
-                    text: "Help Center",
-                    icon: const Icon(
-                      Icons.help,
-                      color: Colors.green,
-                    ),
-                    press: () {},
-                  ),
-                  ProfileMenu(
                     text: "Đăng xuất",
                     icon: const Icon(
                       Icons.logout,
