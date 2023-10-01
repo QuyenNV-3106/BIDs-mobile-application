@@ -21,6 +21,9 @@ const apiGetSessionsHaveNotPay =
     "/api/Sessions/by_havent_tranfer_by_auctioneer?userId=";
 const apiGetSessionsNotStart = "/api/Sessions/by_not_start";
 const apiGetSessionsInStage = "/api/Sessions/by_in_stage";
+const apiGetSessionsReceived = "/api/Sessions/session_status_to_received";
+const apiGetSessionsError =
+    "/api/Sessions/session_status_to_error_item?reason=";
 const apiGetSessionsCheckAndUpdateOrder =
     "/api/Sessions/check_and_update_order";
 const apiGetSessionDetail = "/api/SessionDetails/by_session";

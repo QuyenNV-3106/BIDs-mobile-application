@@ -65,6 +65,7 @@ class _CompleteByUserTabState extends State<CompleteByUserTab> {
                           builder: (context) => SessionDetailForPayment(
                             session: sessions[i],
                             checkPayment: false,
+                            checkError: true,
                           ),
                         ),
                       );

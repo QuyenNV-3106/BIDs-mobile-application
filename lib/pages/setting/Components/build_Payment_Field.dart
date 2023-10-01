@@ -1,3 +1,4 @@
+import 'package:bid_online_app_v2/models/UserProfile.dart';
 import 'package:flutter/material.dart';
 
 class InputPayPal extends StatefulWidget {
@@ -12,7 +13,10 @@ class _InputPayPalState extends State<InputPayPal> {
   @override
   void initState() {
     super.initState();
+
     InputPayPal.payPalEditingController = TextEditingController();
+    InputPayPal.payPalEditingController.text =
+        UserProfile.user!.payPalAccount!.first.payPalAccount!;
   }
 
   @override

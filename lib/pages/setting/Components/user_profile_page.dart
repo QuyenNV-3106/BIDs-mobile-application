@@ -9,6 +9,7 @@ import 'package:bid_online_app_v2/pages/setting/Components/build_Address_Field.d
 import 'package:bid_online_app_v2/pages/setting/Components/build_Name_Form_Field.dart';
 import 'package:bid_online_app_v2/pages/setting/Components/build_Password_Conform_Form_Field.dart';
 import 'package:bid_online_app_v2/pages/setting/Components/build_Password_Form_Field.dart';
+import 'package:bid_online_app_v2/pages/setting/Components/build_Payment_Field.dart';
 import 'package:bid_online_app_v2/pages/setting/Components/build_Phone_Number_Form_Field.dart';
 import 'package:bid_online_app_v2/services/firebase_service.dart';
 import 'package:bid_online_app_v2/services/user_service.dart';
@@ -30,9 +31,10 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   final _formkey = GlobalKey<FormState>();
+  final _formkeyPayment = GlobalKey<FormState>();
   late bool loading = false;
   late bool isSuccess = true;
-  late bool isUpdate = false;
+  late bool isUpdate = false, isUpdatePayment = false, openForm = false;
   AlertDialogMessage alert = AlertDialogMessage();
   File? _pickedImage;
   XFile? imageUpdate;
@@ -112,7 +114,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   void initState() {
-    userState = UserProfile.user;
+    setState(() {
+      userState = UserProfile.user;
+    });
     super.initState();
   }
 
@@ -144,8 +148,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 children: [
                   SingleChildScrollView(
                     // child: updateProfileForm(context),
-                    child: isUpdate
-                        ? updateProfileForm(context)
+                    child: openForm
+                        ? isUpdate
+                            ? updateProfileForm(context)
+                            : updatePaymentForm(context)
                         : profileUser(context),
                   ),
                   loading
@@ -187,6 +193,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ElevatedButton(
                 onPressed: () {
                   setState(() {
+                    openForm = false;
                     isUpdate = false;
                   });
                 },
@@ -239,7 +246,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         setState(() {
                           isSuccess = true;
                           UserProfile.user = user;
-                          userState = user;
+                          userState!.userName = user.userName;
+                          userState!.password = user.password;
+                          userState!.address = user.address;
+                          userState!.phone = user.phone;
                           // UserProfile.emailSt = user.email;
                           // UserProfile.avatarSt = user.avatar;
 
@@ -264,6 +274,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     );
                     setState(() {
                       loading = false;
+                      openForm = false;
                       isUpdate = false;
                     });
                   }
@@ -335,7 +346,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             leading: const Icon(Icons.paypal_outlined),
             title: userState!.payPalAccount!.firstOrNull == null
                 ? const Text('Không có tài khoản PayPal')
-                : const Text('Không có tài khoản PayPal'),
+                : Text(userState!.payPalAccount!.first.payPalAccount!),
           ),
           ListTile(
             leading: const Icon(Icons.business_center),
@@ -343,14 +354,132 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ? 'Bạn có thể tham gia đấu giá'
                 : 'Bạn có thể đấu giá và đăng bán'),
           ),
-          DefaultButton(
-            text: 'Cập nhật',
-            press: () {
-              setState(() {
-                isUpdate = true;
-              });
-            },
-          )
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isUpdate = false;
+                    openForm = true;
+                  });
+                },
+                style: ButtonStyle(
+                    backgroundColor:
+                        const MaterialStatePropertyAll(Colors.blue),
+                    fixedSize: MaterialStatePropertyAll(
+                        Size.fromWidth(sizeInit(context).width / 2.5))),
+                child: const Center(
+                  child: Text('Cập nhật tài khoản PayPal',
+                      textAlign: TextAlign.center),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isUpdate = true;
+                    openForm = true;
+                  });
+                },
+                style: ButtonStyle(
+                    backgroundColor:
+                        const MaterialStatePropertyAll(kPrimaryColor),
+                    fixedSize: MaterialStatePropertyAll(
+                        Size.fromWidth(sizeInit(context).width / 2.5))),
+                child: const Center(
+                  child: Text('Cập nhật thông tin tài khoản',
+                      textAlign: TextAlign.center),
+                ),
+              ),
+            ],
+          ),
+          // ],
+        ],
+      ),
+    );
+  }
+
+  Form updatePaymentForm(BuildContext context) {
+    return Form(
+      key: _formkeyPayment,
+      child: Column(
+        children: [
+          SizedBox(height: sizeInit(context).height * 0.04),
+          const InputPayPal(),
+          SizedBox(height: (30 / 812.0) * sizeInit(context).height),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    openForm = false;
+                    isUpdate = false;
+                  });
+                },
+                style: ButtonStyle(
+                    backgroundColor: const MaterialStatePropertyAll(Colors.red),
+                    fixedSize: MaterialStatePropertyAll(
+                        Size.fromWidth(sizeInit(context).width / 3))),
+                child: const Center(
+                  child: Text('Hủy'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: () async {
+                  if (_formkeyPayment.currentState!.validate()) {
+                    _formkeyPayment.currentState!.save();
+
+                    setState(() {
+                      loading = true;
+                    });
+
+                    await UserService()
+                        .updatePayment(UserProfile.user!.userId!,
+                            InputPayPal.payPalEditingController.text)
+                        .then((value) {
+                      setState(() {
+                        print("value: ${value.statusCode}");
+                        if (value.statusCode != 200) {
+                          setState(() {
+                            userState!.payPalAccount!.first.payPalAccount =
+                                InputPayPal.payPalEditingController.text;
+                          });
+                          alert.showAlertDialog(
+                              context, "Thông báo", value.body);
+                        } else {
+                          alert.showAlertDialog(context, "Thông báo",
+                              "Bạn đã cập nhật tài khoản PayPal thành công");
+                        }
+                      });
+                    }).timeout(
+                      const Duration(seconds: 30),
+                      onTimeout: () {
+                        return alert.showAlertDialog(context, "Thất bại",
+                            "Kết nối của bạn không ổn định\nXin hãy kiểm tra lại mạng wifi/4G của bạn.");
+                      },
+                    );
+
+                    setState(() {
+                      loading = false;
+                      openForm = false;
+                      isUpdate = false;
+                    });
+                  }
+                },
+                style: ButtonStyle(
+                    backgroundColor:
+                        const MaterialStatePropertyAll(kPrimaryColor),
+                    fixedSize: MaterialStatePropertyAll(
+                        Size.fromWidth(sizeInit(context).width / 3))),
+                child: const Center(
+                  child: Text('Cập nhật'),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

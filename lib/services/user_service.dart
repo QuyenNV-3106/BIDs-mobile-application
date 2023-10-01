@@ -86,6 +86,21 @@ class UserService {
     }
   }
 
+  Future<http.Response> updatePayment(String id, String payment) async {
+    final uri = Uri.parse(apiUrl + apiPostPayment);
+    final resp = await http.put(uri,
+        headers: <String, String>{
+          "content-type": "application/json; charset=utf-8",
+          'Authorization': 'Bearer ${TokenManager.getToken()}'
+        },
+        body: jsonEncode({"userId": id, "payPalAccount": payment}));
+    if (resp.statusCode == 200) {
+      return resp;
+    } else {
+      return resp;
+    }
+  }
+
   Future<http.Response> updateAccount(UserProfile user) async {
     final uri = Uri.parse(apiUrl + apiPutAccount);
     final resp = await http.put(uri,

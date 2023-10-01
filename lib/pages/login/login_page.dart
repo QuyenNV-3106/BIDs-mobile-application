@@ -152,6 +152,9 @@ class _LoginPageState extends State<LoginPage> {
                                           height: (15 / 812.0) *
                                               sizeInit(context).height),
                                       const RememberAccount(),
+                                      SizedBox(
+                                          height: (15 / 812.0) *
+                                              sizeInit(context).height),
                                       DefaultButton(
                                           text: "Đăng Nhập", press: pressLogin),
                                     ],
@@ -229,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
   TextFormField buildPasswordFormField() {
     return TextFormField(
       obscureText: _isPasswordVisible,
-      initialValue: "05072001",
+      // initialValue: "05072001",
       onSaved: (newValue) => password = newValue!,
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -262,7 +265,7 @@ class _LoginPageState extends State<LoginPage> {
   TextFormField buildEmailFormField() {
     return TextFormField(
       // controller: emailTextController,
-      initialValue: "vanquyen.bt2@gmail.com",
+      // initialValue: "vanquyen.bt2@gmail.com",
       focusNode: focusNode,
       autofocus: true,
       keyboardType: TextInputType.emailAddress,

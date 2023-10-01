@@ -261,8 +261,6 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
   }
 
   _refreshData() async {
-    await SessionService().getAllSessionsNotStart();
-    await SessionService().getAllSessionsInStage();
     await SessionService().getAllSessions().then((value) {
       setState(() {
         session = value
@@ -272,6 +270,8 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
       });
       return value;
     });
+    await SessionService().getAllSessionsNotStart();
+    await SessionService().getAllSessionsInStage();
     await PaymentService().paymentChecking(UserProfile.user!.userId!);
   }
 

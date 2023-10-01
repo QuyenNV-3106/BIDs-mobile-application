@@ -15,16 +15,16 @@ class _RememberAccountState extends State<RememberAccount> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Checkbox(
-          value: remember,
-          activeColor: kPrimaryColor,
-          onChanged: (value) {
-            setState(() {
-              remember = value!;
-            });
-          },
-        ),
-        const Text("Nhớ tài khoản"),
+        // Checkbox(
+        //   value: remember,
+        //   activeColor: kPrimaryColor,
+        //   onChanged: (value) {
+        //     setState(() {
+        //       remember = value!;
+        //     });
+        //   },
+        // ),
+        // const Text(" "),
         const Spacer(),
         GestureDetector(
           onTap: () =>

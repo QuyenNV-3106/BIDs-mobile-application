@@ -124,4 +124,29 @@ class HistoryService {
       return responseData.map((e) => SessionHaveNotPay.fromJson(e)).toList();
     }
   }
+
+  Future<http.Response> changeReceivedStatus(String sessionID) async {
+    final uri = Uri.parse("$apiUrl$apiGetSessionsReceived");
+    final resp = await http.put(uri,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          'Authorization': 'Bearer ${TokenManager.getToken()}'
+        },
+        body: jsonEncode({"sessionID": sessionID}));
+
+    return resp;
+  }
+
+  Future<http.Response> changeErrorStatus(
+      String sessionID, String reason) async {
+    final uri = Uri.parse("$apiUrl$apiGetSessionsError$reason");
+    final resp = await http.put(uri,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          'Authorization': 'Bearer ${TokenManager.getToken()}'
+        },
+        body: jsonEncode({"sessionID": sessionID}));
+
+    return resp;
+  }
 }

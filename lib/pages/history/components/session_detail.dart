@@ -10,6 +10,7 @@ import 'package:bid_online_app_v2/models/UserProfile.dart';
 import 'package:bid_online_app_v2/pages/history/components/session_detail_componets/product_description.dart';
 import 'package:bid_online_app_v2/pages/history/components/session_detail_componets/product_images.dart';
 import 'package:bid_online_app_v2/pages/history/components/session_detail_componets/top_rounded_container.dart';
+import 'package:bid_online_app_v2/pages/history/services/history_services.dart';
 import 'package:bid_online_app_v2/pages/login/components/alert_dialog.dart';
 import 'package:bid_online_app_v2/services/payment_service.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,9 @@ import 'package:url_launcher/url_launcher.dart';
 class SessionDetailForPayment extends StatefulWidget {
   final SessionHaveNotPay? session;
   final bool? checkPayment;
-  const SessionDetailForPayment({super.key, this.session, this.checkPayment});
+  final bool? checkError;
+  const SessionDetailForPayment(
+      {super.key, this.session, this.checkPayment, this.checkError});
 
   @override
   State<SessionDetailForPayment> createState() =>
@@ -26,11 +29,12 @@ class SessionDetailForPayment extends StatefulWidget {
 }
 
 class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
-  late bool loading = false, enable = true;
+  late bool loading = false, enable = true, errorItem = false;
   String paymentUrl = '';
   late Timer _timer;
   bool paymentButton = false;
   AlertDialogMessage aleart = AlertDialogMessage();
+  TextEditingController textController = TextEditingController();
 
   _paymentComplete() async {
     await PaymentService()
@@ -57,9 +61,13 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
   @override
   void initState() {
     // TODO: implement initState
+    textController = TextEditingController();
     super.initState();
     if (widget.checkPayment != null) {
       paymentButton = widget.checkPayment!;
+    }
+    if (widget.checkError != null) {
+      errorItem = widget.checkError!;
     }
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       _refreshData();
@@ -68,8 +76,8 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
+    textController.dispose();
     _timer.cancel();
   }
 
@@ -79,15 +87,20 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Xác nhận trả hàng'),
-          content: const Column(
-            children: [
-              Text(
-                  'Bạn có đồng ý trả lại tài sản\nLưu ý: bạn sẽ mất số tiền tham gia và tiền cọc của tài sản'),
-              TextField(
-                // controller: _textController,
-                decoration: InputDecoration(labelText: 'Lý do trả hàng'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                    'Bạn có đồng ý trả lại tài sản\nLưu ý: bạn sẽ mất số tiền tham gia và tiền cọc của tài sản'),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: textController,
+                  decoration:
+                      const InputDecoration(labelText: 'Lý do trả hàng'),
+                ),
+              ],
+            ),
           ),
           actions: <Widget>[
             TextButton(
@@ -98,21 +111,45 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
             ),
             TextButton(
               child: Text('Đồng ý'),
-              onPressed: () {
-                // Ở đây, bạn có thể xử lý dữ liệu từ ô nhập, ví dụ:
-                // final userInput = _textController.text;
-                // print('Dữ liệu nhập: $userInput');
-                Navigator.of(context).pop();
+              onPressed: () async {
+                setState(() {
+                  loading = true;
+                  Navigator.of(context).pop();
+                });
+
+                await HistoryService()
+                    .changeErrorStatus(
+                        widget.session!.sessionResponseCompletes.sessionId,
+                        textController.text)
+                    .then((value) {
+                  print("Status: ${value.statusCode}");
+                  print("Status: ${value.body}");
+                  if (value.statusCode == 200) {
+                    setState(() {
+                      enable = false;
+                      loading = false;
+                      aleart.showAlertDialog(context, "Thông báo",
+                          "Bạn đã từ chối nhận hàng thành công");
+                    });
+                  } else {
+                    setState(() {
+                      enable = true;
+                      loading = false;
+                      aleart.showAlertDialog(context, "Thất bại",
+                          "Bạn đã từ chối nhận hàng thất bại");
+                    });
+                  }
+                });
+
+                setState(() {
+                  loading = false;
+                });
               },
             ),
           ],
         );
       },
     );
-  }
-
-  _showError() {
-    print("errors");
   }
 
   _showInputPopup2(BuildContext context) {
@@ -127,7 +164,7 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
               Text(
                   'Bạn có đồng ý từ chối thanh toán?\nLưu ý: bạn sẽ mất số tiền tham gia và tiền cọc của tài sản'),
               // TextField(
-              //   // controller: _textController,
+              //   // controller: textController,
               //   decoration: InputDecoration(labelText: 'Lý do trả hàng'),
               // ),
             ],
@@ -244,6 +281,98 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
     );
   }
 
+  Widget paymentProcess() {
+    return Column(
+      children: [
+        widget.session!.winner == UserProfile.user!.email
+            ? DefaultButton(
+                text: "Thanh toán",
+                press: () async {
+                  // Navigator.of(context).pop();
+                  _showPaymentDialog(context);
+                },
+              )
+            : const SizedBox(height: 0),
+        widget.session!.winner == UserProfile.user!.email
+            ? const SizedBox(height: 20)
+            : const SizedBox(height: 0),
+        widget.session!.winner == UserProfile.user!.email
+            ? TextButton(
+                onPressed: () async {
+                  setState(() {
+                    loading = true;
+                  });
+                  _showInputPopup2(context);
+                  setState(() {
+                    loading = false;
+                  });
+                },
+                child: const Text("Từ chối thanh toán",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.red)))
+            : const SizedBox(height: 0),
+      ],
+    );
+  }
+
+  Widget errorItemProcess() {
+    return Column(
+      children: [
+        widget.session!.winner == UserProfile.user!.email
+            ? DefaultButton(
+                text: "Đã nhận hàng",
+                press: () async {
+                  // Navigator.of(context).pop();
+                  setState(() {
+                    loading = true;
+                  });
+                  await HistoryService()
+                      .changeReceivedStatus(
+                          widget.session!.sessionResponseCompletes.sessionId)
+                      .then((value) {
+                    print("Status: ${value.statusCode}");
+                    print("Status: ${value.body}");
+                    if (value.statusCode == 200) {
+                      setState(() {
+                        enable = false;
+                      });
+                      aleart.showAlertDialog(context, "Thành công",
+                          "Bạn đã xác nhận nhận được sản phẩm");
+                    } else {
+                      setState(() {
+                        enable = true;
+                      });
+                      aleart.showAlertDialog(context, "Thất bại", value.body);
+                    }
+                  });
+                  setState(() {
+                    loading = false;
+                  });
+                },
+              )
+            : const SizedBox(height: 0),
+        widget.session!.winner == UserProfile.user!.email
+            ? const SizedBox(height: 20)
+            : const SizedBox(height: 0),
+        widget.session!.winner == UserProfile.user!.email
+            ? TextButton(
+                onPressed: () async {
+                  setState(() {
+                    loading = true;
+                  });
+                  _showInputPopup(context);
+                  setState(() {
+                    loading = false;
+                  });
+                },
+                child: const Text("Từ chối nhận hàng",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.red)))
+            : const SizedBox(height: 0),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -277,45 +406,13 @@ class _SessionDetailForPaymentState extends State<SessionDetailForPayment> {
                                 bottom: (40 / 375.0) * sizeInit(context).width,
                                 top: (15 / 375.0) * sizeInit(context).width,
                               ),
-                              child: paymentButton && enable
-                                  ? Column(
-                                      children: [
-                                        widget.session!.winner ==
-                                                UserProfile.user!.email
-                                            ? DefaultButton(
-                                                text: "Thanh toán",
-                                                press: () async {
-                                                  // Navigator.of(context).pop();
-                                                  _showPaymentDialog(context);
-                                                },
-                                              )
-                                            : const SizedBox(height: 0),
-                                        widget.session!.winner ==
-                                                UserProfile.user!.email
-                                            ? const SizedBox(height: 20)
-                                            : const SizedBox(height: 0),
-                                        widget.session!.winner ==
-                                                UserProfile.user!.email
-                                            ? TextButton(
-                                                onPressed: () async {
-                                                  setState(() {
-                                                    loading = true;
-                                                  });
-                                                  _showInputPopup2(context);
-                                                  setState(() {
-                                                    loading = false;
-                                                  });
-                                                },
-                                                child: const Text(
-                                                    "Từ chối thanh toán",
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.red)))
-                                            : const SizedBox(height: 0),
-                                      ],
-                                    )
-                                  : const SizedBox(height: 0),
+                              child: widget.checkError == null
+                                  ? paymentButton && enable
+                                      ? paymentProcess()
+                                      : const SizedBox(height: 0)
+                                  : enable
+                                      ? errorItemProcess()
+                                      : const SizedBox(height: 0),
                             ),
                           ),
                         ],
